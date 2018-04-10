@@ -1,0 +1,61 @@
+<resources>
+
+    <!--Action-->
+    <string name="app_name">BookShelf</string>
+    <string name="action_new">New</string>
+    <string name="action_sync">Sync</string>
+    <string name="action_push">Push</string>
+    <string name="action_pull">Pull</string>
+    <string name="action_purge">Purge</string>
+    <string name="action_logout">Logout</string>
+    <string name="action_login">Login</string>
+    <string name="action_facebook_login">Facebook login</string>
+    <string name="action_delete">Delete</string>
+
+    <!--Toast-->
+    <string name="toast_empty_name">Name could not be empty</string>
+    <string name="toast_can_not_login">Can\'t login to app</string>
+    <string name="toast_sign_in_completed">Login completed</string>
+    <string name="toast_sign_up_completed">Sign up completed</string>
+    <string name="toast_can_not_sign_up">Can\'t sign up to app</string>
+    <string name="toast_successful">Successful</string>
+    <string name="toast_unsuccessful">Unsuccessful</string>
+    <string name="toast_save_completed">Save completed</string>
+    <string name="toast_save_failed">Save failed</string>
+    <string name="toast_find_completed">Find completed</string>
+    <string name="toast_find_failed">Find failed</string>
+    <string name="toast_upload_completed">Upload completed</string>
+    <string name="toast_upload_failed">Upload failed</string>
+    <string name="toast_upload_canceled">Upload canceled</string>
+    <string name="toast_download_canceled">Download canceled</string>
+    <string name="toast_delete_completed">Delete completed</string>
+    <string name="toast_delete_failed">Delete failed</string>
+    <string name="toast_sync_completed">Sync completed</string>
+    <string name="toast_sync_failed">Sync failed</string>
+    <string name="toast_pull_completed">Pull completed</string>
+    <string name="toast_pull_failed">Pull failed</string>
+    <string name="toast_push_completed">Push completed</string>
+    <string name="toast_push_failed">Push failed</string>
+    <string name="toast_purge_completed">Purge completed</string>
+    <string name="toast_purge_failed">Purge failed</string>
+    <string name="toast_logout_completed">Logout completed</string>
+    <string name="toast_logout_failed">Logout failed</string>
+
+    <!--Progress Dialog-->
+    <string name="progress_login">Login</string>
+    <string name="progress_sign_up">Sign up</string>
+    <string name="progress_logout">Logout</string>
+    <string name="progress_save">Saving</string>
+    <string name="progress_find">Finding</string>
+    <string name="progress_upload">Uploading</string>
+    <string name="progress_delete">Deleting</string>
+    <string name="progress_sync">Syncing</string>
+    <string name="progress_pull">Pulling</string>
+    <string name="progress_push">Pushing</string>
+    <string name="progress_purge">Purging</string>
+
+    <!--Social-->
+    <string name="facebook_app_id">YOUR_FACEBOOK_APP_ID_HERE</string>
+    <string name="fb_login_protocol_scheme">YOUR_FACEBOOK_LOGIN_PROTOCOL_SCHEME_HERE</string>
+
+</resources>
