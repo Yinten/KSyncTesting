@@ -31,7 +31,7 @@ import java.util.concurrent.CountDownLatch;
  */
 @RunWith(AndroidJUnit4.class)
 @LargeTest
-public class ApplicationTest {
+public class KinveyUserTests {
 
     private static final String TAG = "KINVEY_TESTS";
     private App app;

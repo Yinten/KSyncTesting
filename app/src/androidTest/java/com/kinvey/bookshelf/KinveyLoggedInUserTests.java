@@ -379,7 +379,7 @@ public class KinveyLoggedInUserTests {
      * buildingStoreCache to Kinvey.   This differs from buildStoreSync in the StoreType parameter,
      * the remainder of the test is the same.
      *
-     * Currently fails, whatever my issue here is, have spent a lot of time trying to diagnose.
+     * Currently fails looking for help to diagnose.
      */
     @Test
     public void testCacheBuilding() {
@@ -431,7 +431,7 @@ public class KinveyLoggedInUserTests {
      * Sync the locally stored buildings in the
      * buildingStoreSync to Kinvey
      *
-     * Currently fails, whatever my issue here is, has costed me a boat load of time.
+     * Currently fails, whatever my issue here is, I think will resolve all my issues for a good long time.
      */
     public void testStoreSync(DataStore datastore, final CountDownLatch latch) {
 
@@ -599,7 +599,6 @@ public class KinveyLoggedInUserTests {
 
         return writer.toString();
     }
-
 
     public Building createNewBuilding() {
         Building building = new Building();
