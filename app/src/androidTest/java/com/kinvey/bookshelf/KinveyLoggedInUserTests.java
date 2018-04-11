@@ -7,12 +7,14 @@ import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
+import com.google.api.client.json.GenericJson;
 import com.kinvey.android.Client;
 import com.kinvey.android.store.DataStore;
 import com.kinvey.android.store.UserStore;
 import com.kinvey.android.sync.KinveyPullResponse;
 import com.kinvey.android.sync.KinveyPushResponse;
 import com.kinvey.android.sync.KinveySyncCallback;
+import com.kinvey.bookshelf.bo.BasicEntity;
 import com.kinvey.bookshelf.bo.Building;
 import com.kinvey.bookshelf.bo.Day;
 import com.kinvey.bookshelf.bo.KAddress;
@@ -32,18 +34,22 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
 @RunWith(AndroidJUnit4.class)
 @MediumTest
 
 /***
- *  Objective:  Cycle a user between tests and clear the datastores.
+ *  Objective:
+ *  #First, Cycle a user between tests and clear the datastores.
  *   Create a simple object 'book' that has at least one internal object.
  *   Save the book using the cache mechanism.
  *   ##Passes
  *
- *   Second, test using a more complex object and the sync mechanism with sync framework.
+ *
+ *
+ *   #Second, test using a more complex object and the sync mechanism with sync framework.
  *  The example project says, sync successful, but it doesn't use the 'sync' framework it uses
  *  the 'cache' framework.
  *       This is the line of code that is used for the
@@ -51,6 +57,12 @@ import java.util.concurrent.CountDownLatch;
  *       in the demo.
  *  bookStore = DataStore.collection(Constants.BOOK_COLLECTION_NAME,
  *      Book.class, StoreType.CACHE, client);
+ *
+ *   #Third, create a Basic entity test mimicking the "Building tests" using a cache store and a sync store.
+ *   show that these unit tests pass.   Meaning that the issue seems isolated to using nested GenericJSON
+ *   when using a StoreType.SYNC.
+ *
+ *
  *
  *  Per the sync documentation on Kinvey website.
  *       https://devcenter.kinvey.com/android/guides/datastore#Fetching
@@ -137,6 +149,13 @@ public class KinveyLoggedInUserTests {
     /* A building store based on a cache */
     //StoreType.CACHE
     private DataStore<Building> buildingStoreCache;
+
+    /* A basic entity store sync*/
+    private DataStore<BasicEntity> basicEntityStoreSync;
+
+    /* A basic entity store cache */
+    private DataStore<BasicEntity> basicEntityStoreCache;
+
 
     /* Load the shelf activity */
     @Rule
@@ -242,11 +261,22 @@ public class KinveyLoggedInUserTests {
                 //Sync based building store
                 buildingStoreSync = DataStore.collection(Constants.BUILDING_COLLECTION_NAME, Building.class, StoreType.SYNC, getClient());
 
+
+                //Cache based basic entity with no nested GenericJSON, building has nested GenericJSON.
+                basicEntityStoreCache = DataStore.collection("BasicEntityCache", BasicEntity.class, StoreType.CACHE, getClient());
+
+                //Sync based basic entity with no nested GenericJSON, building has nested GenericJSON.
+                basicEntityStoreSync = DataStore.collection("BasicEntitySync", BasicEntity.class, StoreType.SYNC, getClient());
+
+
+
+
                 //Just in case
                 bookStore.clear();
                 buildingStoreCache.clear();
                 buildingStoreSync.clear();
-
+                basicEntityStoreCache.clear();
+                basicEntityStoreSync.clear();
 
                 //Release the latch to allow tests to run.
                 loginLatch.countDown();
@@ -364,19 +394,53 @@ public class KinveyLoggedInUserTests {
 
 
     /***
+     * Sync the locally stored basic entities in the
+     * @basicEntityStoreCache to Kinvey.   This differs from basicEntityStoreSync in the StoreType parameter,
+     * the remainder of the test is the same.
+     *
+     * Currently fails, whatever my issue here is, have spent a lot of time trying to diagnose.
+     */
+    @Test
+    public void testCacheBasicEntity() {
+        CountDownLatch latch = new CountDownLatch(1);
+        testBasicEntity(basicEntityStoreCache, latch);
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            quit(e);
+        }
+    }
+
+
+    /***
+     * Test a building with a lot of complex objects against the sync framework.
+     */
+    @Test
+    public void testSyncBasicEntity() {
+        CountDownLatch latch = new CountDownLatch(1);
+        testBasicEntity(basicEntityStoreSync, latch);
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            quit(e);
+        }
+    }
+
+
+    /***
      * Sync the locally stored buildings in the
      * buildingStoreSync to Kinvey
      *
      * Currently fails, whatever my issue here is, has costed me a boat load of time.
      */
-    public void testBuildingStoreSync(DataStore<Building> buildingDatastore, final CountDownLatch latch) {
+    public void testStoreSync(DataStore datastore, final CountDownLatch latch) {
 
-        buildingDatastore.sync(new KinveySyncCallback<Building>()
+        datastore.sync(new KinveySyncCallback()
 
         {
+
             @Override
-            public void onSuccess(KinveyPushResponse
-                                          kinveyPushResponse, KinveyPullResponse<Building> kinveyPullResponse) {
+            public void onSuccess(KinveyPushResponse kinveyPushResponse, KinveyPullResponse kinveyPullResponse) {
                 Log.d(TAG, "buildingStore.sync(: OnSuccess");
                 latch.countDown();
             }
@@ -392,7 +456,7 @@ public class KinveyLoggedInUserTests {
             }
 
             @Override
-            public void onPullSuccess(KinveyPullResponse<Building> kinveyPullResponse) {
+            public void onPullSuccess(KinveyPullResponse kinveyPullResponse) {
                 Log.d(TAG, "buildingStore.sync(: onPullSuccess");
             }
 
@@ -438,53 +502,16 @@ public class KinveyLoggedInUserTests {
 
             public void run() {
 
-                Building building = new Building();
-
-                KAddress kAddress = new KAddress();
-                kAddress.setStreet("223 Rivercrest Dr");
-                kAddress.setCity("Hudson");
-                kAddress.setCountry("USA");
-                kAddress.setState("WI");
-                kAddress.setZipCode("54016");
-                building.setAddress(kAddress);
-
-                //building.set_geoloc(new double[]{12.22F, 11.11F});
-
-                building.setName("RyanTestBuilding");
-
-                building.setTimeZone("US/Chicago");
-                HashMap tunerHashmap = new HashMap<String, Object>();
-
-                //tunerHashmap.put("Tuner1", 5);
-                building.setTuners(tunerHashmap);
-
-                ArrayList<Schedule> scheduleArrayList = new ArrayList<>();
-                Schedule newSchedule = new Schedule();
-
-                newSchedule.type = "Light";
-                ArrayList<ScheduleInternal> scheduleInternalArrayList = new ArrayList<>();
-                ScheduleInternal scheduleInternal = new ScheduleInternal();
-                scheduleInternal.days = new ArrayList<Day>();
-                Day one = new Day();
-                scheduleInternal.days.add(one);
-                scheduleInternal.setSthh(1);
-                scheduleInternal.setEthh(10);
-                scheduleInternal.setStmm(30);
-                scheduleInternal.setEtmm(15);
-                scheduleInternal.setVal(75);
-                scheduleInternalArrayList.add(scheduleInternal);
-                newSchedule.setInternalSchedules(scheduleInternalArrayList);
-                scheduleArrayList.add(newSchedule);
+                Building building = createNewBuilding();
 
 
-                building.setSchedules(scheduleArrayList);
                 buildingStore.save(building, new KinveyClientCallback<Building>() {
                     @Override
                     public void onSuccess(Building building) {
                         Log.d(TAG, "buildingStore.save(: OnSuccess");
                         try {
                             Log.d(TAG, "Building: " + building.toPrettyString());
-                            testBuildingStoreSync(buildingStore, latch);
+                            testStoreSync(buildingStore, latch);
                         } catch (IOException e) {
                             e.printStackTrace();
                             Assert.fail(e.getMessage());
@@ -506,6 +533,58 @@ public class KinveyLoggedInUserTests {
     }
 
 
+
+    /***
+     * Save and sync a BasicEntity to the Kinvey datastore.   It'll use the Datastores StoreType.
+     *
+     * This is used to test the differences between sync & cache etc.
+     */
+    private void testBasicEntity(final DataStore<BasicEntity> dataStore, final CountDownLatch latch) {
+        Handler h = new Handler(Looper.getMainLooper());
+        h.post(new Runnable() {
+
+            public void run() {
+
+                BasicEntity basicEntity = createNewBasicEntity();
+
+
+                dataStore.save(basicEntity, new KinveyClientCallback<BasicEntity>() {
+                    @Override
+                    public void onSuccess(BasicEntity basicEntity1) {
+                        Log.d(TAG, "Basic Entity.save(: OnSuccess");
+                        try {
+                            Log.d(TAG, "Basic Entity: " + basicEntity1.toPrettyString());
+                            testStoreSync(dataStore, latch);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            Assert.fail(e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        throwable.printStackTrace();
+                        Assert.fail(throwable.getMessage());
+
+
+                    }
+                });
+
+            }
+        });
+
+    }
+
+
+    private BasicEntity createNewBasicEntity()
+    {
+        BasicEntity basicEntity = new BasicEntity();
+        Random r = new Random();
+        basicEntity.setName("Name " + r.nextInt());
+        return basicEntity;
+    }
+
+
     /***
      * Returns the full stack trace as a readable String for printing in asserts
      * to make debugging slightly less Logcat based.
@@ -522,4 +601,49 @@ public class KinveyLoggedInUserTests {
     }
 
 
+    public Building createNewBuilding() {
+        Building building = new Building();
+
+        KAddress kAddress = new KAddress();
+        kAddress.setStreet("223 Rivercrest Dr");
+        kAddress.setCity("Hudson");
+        kAddress.setCountry("USA");
+        kAddress.setState("WI");
+        kAddress.setZipCode("54016");
+        building.setAddress(kAddress);
+
+        //building.set_geoloc(new double[]{12.22F, 11.11F});
+
+        building.setName("RyanTestBuilding");
+
+        building.setTimeZone("US/Chicago");
+        HashMap tunerHashmap = new HashMap<String, Object>();
+
+        //tunerHashmap.put("Tuner1", 5);
+        building.setTuners(tunerHashmap);
+
+        ArrayList<Schedule> scheduleArrayList = new ArrayList<>();
+        Schedule newSchedule = new Schedule();
+
+        newSchedule.type = "Light";
+        ArrayList<ScheduleInternal> scheduleInternalArrayList = new ArrayList<>();
+        ScheduleInternal scheduleInternal = new ScheduleInternal();
+        scheduleInternal.days = new ArrayList<Day>();
+        Day one = new Day();
+        scheduleInternal.days.add(one);
+        scheduleInternal.setSthh(1);
+        scheduleInternal.setEthh(10);
+        scheduleInternal.setStmm(30);
+        scheduleInternal.setEtmm(15);
+        scheduleInternal.setVal(75);
+        scheduleInternalArrayList.add(scheduleInternal);
+        newSchedule.setInternalSchedules(scheduleInternalArrayList);
+        scheduleArrayList.add(newSchedule);
+
+
+        building.setSchedules(scheduleArrayList);
+
+
+        return building;
+    }
 }

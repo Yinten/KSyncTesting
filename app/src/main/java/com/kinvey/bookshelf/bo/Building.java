@@ -22,6 +22,9 @@ public class Building extends GenericJson {
         //Generic JSON requires empty constructor.
     }
 
+    @Key("_id")
+    private String id;
+
     @Key("tuners")
     private HashMap<String, Object> tuners;
 
@@ -86,5 +89,13 @@ public class Building extends GenericJson {
 
     public void setSchedules(List<Schedule> schedules) {
         this.schedules = schedules;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }
